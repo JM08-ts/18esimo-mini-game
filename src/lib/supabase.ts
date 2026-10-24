@@ -20,6 +20,12 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 // Admin client using service role key to ensure storage upload is never blocked by RLS policies
 export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey || supabaseAnonKey, {
   auth: { persistSession: false, autoRefreshToken: false },
+  global: {
+    headers: {
+      Authorization: `Bearer ${supabaseServiceKey}`,
+      apikey: supabaseServiceKey,
+    },
+  },
 });
 
 export const STORAGE_BUCKET = 'party-photos';
@@ -220,34 +226,26 @@ export async function submitPhotoTask({
   const fileExt = 'jpg';
   const fileName = `${player.id}/task_${taskId}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
 
-  // 1. Upload to Supabase Storage using admin client (bypasses RLS)
-  let uploadRes = await supabaseAdmin.storage
-    .from(STORAGE_BUCKET)
-    .upload(fileName, blob, {
-      contentType: 'image/jpeg',
-      upsert: true,
-    });
+  // 1. Upload to Supabase Storage using direct REST API with service authorization (bypasses storage RLS)
+  const uploadEndpoint = `${supabaseUrl}/storage/v1/object/${STORAGE_BUCKET}/${fileName}`;
+  const uploadRes = await fetch(uploadEndpoint, {
+    method: 'POST',
+    headers: {
+      apikey: supabaseServiceKey,
+      Authorization: `Bearer ${supabaseServiceKey}`,
+      'Content-Type': 'image/jpeg',
+      'x-upsert': 'true',
+    },
+    body: blob,
+  });
 
-  if (uploadRes.error) {
-    // Fallback to anon client
-    uploadRes = await supabase.storage
-      .from(STORAGE_BUCKET)
-      .upload(fileName, blob, {
-        contentType: 'image/jpeg',
-        upsert: true,
-      });
+  if (!uploadRes.ok) {
+    const errText = await uploadRes.text().catch(() => '');
+    throw new Error(`Errore upload foto su Supabase: ${errText || uploadRes.statusText}`);
   }
 
-  if (uploadRes.error) {
-    throw new Error(`Errore upload foto su Supabase: ${uploadRes.error.message}`);
-  }
-
-  // 2. Public URL
-  const { data: urlData } = supabase.storage
-    .from(STORAGE_BUCKET)
-    .getPublicUrl(fileName);
-
-  const publicUrl = urlData.publicUrl;
+  // 2. Direct public URL from Supabase CDN
+  const publicUrl = `${supabaseUrl}/storage/v1/object/public/${STORAGE_BUCKET}/${fileName}`;
 
   const newSubmissionId = (typeof crypto !== 'undefined' && crypto.randomUUID)
     ? crypto.randomUUID()
