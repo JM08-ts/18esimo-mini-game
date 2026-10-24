@@ -286,7 +286,7 @@ export const MissionsView: React.FC<MissionsViewProps> = ({
                       ) : (
                         <>
                           <Plus className="w-4 h-4" />
-                          <span>Aggiungi Foto (+5 PT) ({count + 1}/10)</span>
+                          <span>Aggiungi Foto (+5 PT) ({count}/{task.maxSubmissions})</span>
                         </>
                       )}
                     </button>

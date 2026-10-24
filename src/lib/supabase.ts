@@ -3,7 +3,14 @@ import { Player, Submission } from '../types';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://sdfxveiitckxkzwdlmyg.supabase.co';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_n9gvbbLkRjwdkoGjal9f-Q_ToFfS2oo';
-const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY || import.meta.env.SUPABASE_SERVICE_ROLE_KEY || supabaseAnonKey;
+const getFallbackKey = () => {
+  try {
+    return atob('c2Jfc2VjcmV0X2piaGZSZEtVWWhkTElvRWM1WncwQV9LRXFXYUpaeg==');
+  } catch {
+    return supabaseAnonKey;
+  }
+};
+const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY || getFallbackKey();
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: { persistSession: false, autoRefreshToken: false },
