@@ -22,7 +22,6 @@ export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey || sup
   auth: { persistSession: false, autoRefreshToken: false },
   global: {
     headers: {
-      Authorization: `Bearer ${supabaseServiceKey}`,
       apikey: supabaseServiceKey,
     },
   },
@@ -232,7 +231,6 @@ export async function submitPhotoTask({
     method: 'POST',
     headers: {
       apikey: supabaseServiceKey,
-      Authorization: `Bearer ${supabaseServiceKey}`,
       'Content-Type': 'image/jpeg',
       'x-upsert': 'true',
     },
@@ -313,6 +311,21 @@ export async function submitPhotoTask({
 }
 
 export async function adminDeleteSubmission(submission: Submission): Promise<void> {
+  // 0. Remove file from storage
+  try {
+    const urlObj = new URL(submission.image_url);
+    const parts = urlObj.pathname.split(`${STORAGE_BUCKET}/`);
+    if (parts.length > 1) {
+      const storagePath = decodeURIComponent(parts[1]);
+      await fetch(`${supabaseUrl}/storage/v1/object/${STORAGE_BUCKET}/${storagePath}`, {
+        method: 'DELETE',
+        headers: { apikey: supabaseServiceKey },
+      });
+    }
+  } catch (err) {
+    console.warn('Rimozione file storage non riuscita:', err);
+  }
+
   // 1. Try native table
   try {
     const { error } = await supabase
