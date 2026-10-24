@@ -34,8 +34,8 @@ export const MissionsView: React.FC<MissionsViewProps> = ({
       setStatusMessage('Compressione e ottimizzazione HD...');
       setErrorMessage(null);
 
-      // 1. Client-Side High-Speed Canvas Compression (max 1920px, 0.85 jpeg)
-      const { blob } = await compressImage(file);
+      // 1. Client-Side High-Speed Canvas Compression (max 1600px, 0.82 jpeg)
+      const { blob, dataUrl } = await compressImage(file);
 
       setStatusMessage('Invio foto alla festa...');
 
@@ -46,6 +46,7 @@ export const MissionsView: React.FC<MissionsViewProps> = ({
         taskTitle: task.title,
         points: task.points,
         blob,
+        dataUrl,
       });
 
       setStatusMessage('Completato con successo!');

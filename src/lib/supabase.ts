@@ -215,35 +215,48 @@ export async function submitPhotoTask({
   taskTitle,
   points,
   blob,
+  dataUrl,
 }: {
   player: Player;
   taskId: number;
   taskTitle: string;
   points: number;
   blob: Blob;
+  dataUrl?: string;
 }): Promise<{ player: Player; submission: Submission }> {
   const fileExt = 'jpg';
   const fileName = `${player.id}/task_${taskId}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
 
-  // 1. Upload to Supabase Storage using direct REST API with service authorization (bypasses storage RLS)
-  const uploadEndpoint = `${supabaseUrl}/storage/v1/object/${STORAGE_BUCKET}/${fileName}`;
-  const uploadRes = await fetch(uploadEndpoint, {
-    method: 'POST',
-    headers: {
-      apikey: supabaseServiceKey,
-      'Content-Type': 'image/jpeg',
-      'x-upsert': 'true',
-    },
-    body: blob,
-  });
+  let publicUrl = dataUrl || '';
 
-  if (!uploadRes.ok) {
-    const errText = await uploadRes.text().catch(() => '');
-    throw new Error(`Errore upload foto su Supabase: ${errText || uploadRes.statusText}`);
+  // 1. Attempt Supabase Storage upload
+  try {
+    const uploadEndpoint = `${supabaseUrl}/storage/v1/object/${STORAGE_BUCKET}/${fileName}`;
+    const uploadRes = await fetch(uploadEndpoint, {
+      method: 'POST',
+      headers: {
+        apikey: supabaseServiceKey,
+        'Content-Type': 'image/jpeg',
+        'x-upsert': 'true',
+      },
+      body: blob,
+    });
+
+    if (uploadRes.ok) {
+      publicUrl = `${supabaseUrl}/storage/v1/object/public/${STORAGE_BUCKET}/${fileName}`;
+    }
+  } catch (err) {
+    console.warn('Storage upload fallback to dataUrl:', err);
   }
 
-  // 2. Direct public URL from Supabase CDN
-  const publicUrl = `${supabaseUrl}/storage/v1/object/public/${STORAGE_BUCKET}/${fileName}`;
+  // Fallback to dataUrl if storage was blocked
+  if (!publicUrl) {
+    if (dataUrl) {
+      publicUrl = dataUrl;
+    } else {
+      throw new Error('Impossibile elaborare l\'immagine. Riprova!');
+    }
+  }
 
   const newSubmissionId = (typeof crypto !== 'undefined' && crypto.randomUUID)
     ? crypto.randomUUID()

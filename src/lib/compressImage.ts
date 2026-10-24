@@ -4,7 +4,9 @@
  * - Target format: image/jpeg with quality 0.85
  * - Typical output: ~250-400 KB for sub-second uploads even on mobile 4G/3G
  */
-export async function compressImage(file: File): Promise<{ blob: Blob; width: number; height: number }> {
+export async function compressImage(
+  file: File
+): Promise<{ blob: Blob; dataUrl: string; width: number; height: number }> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const objectUrl = URL.createObjectURL(file);
@@ -15,7 +17,8 @@ export async function compressImage(file: File): Promise<{ blob: Blob; width: nu
       const originalWidth = img.naturalWidth || img.width;
       const originalHeight = img.naturalHeight || img.height;
 
-      const MAX_SIDE = 1920;
+      // Keep max side 1600px for mobile speed and instant database sync
+      const MAX_SIDE = 1600;
       let targetWidth = originalWidth;
       let targetHeight = originalHeight;
 
@@ -46,6 +49,8 @@ export async function compressImage(file: File): Promise<{ blob: Blob; width: nu
       // Draw onto canvas
       ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
 
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+
       // Export to high-quality JPEG
       canvas.toBlob(
         (blob) => {
@@ -53,10 +58,10 @@ export async function compressImage(file: File): Promise<{ blob: Blob; width: nu
             reject(new Error('Errore durante la compressione dell\'immagine.'));
             return;
           }
-          resolve({ blob, width: targetWidth, height: targetHeight });
+          resolve({ blob, dataUrl, width: targetWidth, height: targetHeight });
         },
         'image/jpeg',
-        0.85
+        0.82
       );
     };
 
