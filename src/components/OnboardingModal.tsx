@@ -51,7 +51,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onJoin }) => {
           </div>
 
           <h1 className="text-2xl font-black text-white tracking-tight mb-2">
-            18° Compleanno
+            18° di Jean
           </h1>
           <p className="text-xs text-zinc-400 leading-relaxed mb-6">
             Completa le sfide fotografiche, carica le foto della festa e accumula <strong className="text-amber-400">100 punti</strong> per vincere il trofeo!
@@ -88,7 +88,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onJoin }) => {
                 disabled={loading}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Es. Marco, Giulia, Il Bomber..."
+                placeholder="Es. Maestro, Giulia, Ettorre cane..."
                 maxLength={25}
                 className="w-full px-4 py-3 rounded-xl bg-zinc-950 border border-amber-500/40 text-white placeholder-zinc-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 text-base transition-all"
               />

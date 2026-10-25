@@ -50,7 +50,7 @@ export const WinnerModal: React.FC<WinnerModalProps> = ({
         </p>
 
         <p className="text-xs text-zinc-400 leading-relaxed mb-6">
-          Hai completato tutte le sfide fotografiche della festa! Sei ufficialmente tra i protagonisti indiscussi del 18° compleanno!
+          Hai completato tutte le sfide fotografiche della festa! Sei ufficialmente tra i protagonisti indiscussi del 18° di Jean!
         </p>
 
         <div className="space-y-2.5">

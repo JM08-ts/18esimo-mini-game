@@ -49,7 +49,7 @@ export const TVModeModal: React.FC<TVModeModalProps> = ({
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
-              18esimo Mini Game <Sparkles className="w-5 h-5 text-amber-400 animate-spin" style={{ animationDuration: '6s' }} />
+              18° di Jean <Sparkles className="w-5 h-5 text-amber-400 animate-spin" style={{ animationDuration: '6s' }} />
             </h1>
             <span className="text-xs uppercase tracking-widest text-amber-400/90 font-bold">
               Modalità Regia & Maxischermo
