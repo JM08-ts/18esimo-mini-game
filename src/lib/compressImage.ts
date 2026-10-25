@@ -1,8 +1,9 @@
 /**
  * Client-Side Ultra-Fast & High-Quality Image Compression
- * - Max dimension: 1920px (Full HD) preserving aspect ratio
- * - Target format: image/jpeg with quality 0.85
- * - Typical output: ~250-400 KB for sub-second uploads even on mobile 4G/3G
+ * - 2K Quad HD resolution: Max dimension 2560px preserving original aspect ratio
+ * - No upscaling if image is smaller than 2560px
+ * - Target format: image/jpeg with high quality 0.92 (92%)
+ * - Explicit high-quality canvas smoothing for maximum sharpness
  */
 export async function compressImage(
   file: File
@@ -17,18 +18,19 @@ export async function compressImage(
       const originalWidth = img.naturalWidth || img.width;
       const originalHeight = img.naturalHeight || img.height;
 
-      // Keep max side 1600px for mobile speed and instant database sync
-      const MAX_SIDE = 1600;
+      // 2K Quad HD max dimension (2560px)
+      const MAX_DIMENSION = 2560;
       let targetWidth = originalWidth;
       let targetHeight = originalHeight;
 
-      if (originalWidth > MAX_SIDE || originalHeight > MAX_SIDE) {
+      // Only scale down if original exceeds 2560px (no upscaling)
+      if (originalWidth > MAX_DIMENSION || originalHeight > MAX_DIMENSION) {
         if (originalWidth >= originalHeight) {
-          targetWidth = MAX_SIDE;
-          targetHeight = Math.round((originalHeight * MAX_SIDE) / originalWidth);
+          targetWidth = MAX_DIMENSION;
+          targetHeight = Math.round((originalHeight * MAX_DIMENSION) / originalWidth);
         } else {
-          targetHeight = MAX_SIDE;
-          targetWidth = Math.round((originalWidth * MAX_SIDE) / originalHeight);
+          targetHeight = MAX_DIMENSION;
+          targetWidth = Math.round((originalWidth * MAX_DIMENSION) / originalHeight);
         }
       }
 
@@ -42,16 +44,17 @@ export async function compressImage(
         return;
       }
 
-      // High quality image smoothing
+      // Explicit high-quality canvas smoothing for maximum sharpness
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
 
       // Draw onto canvas
       ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
 
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+      // Export to 2K Quad HD quality JPEG (0.92 = 92%)
+      const QUALITY = 0.92;
+      const dataUrl = canvas.toDataURL('image/jpeg', QUALITY);
 
-      // Export to high-quality JPEG
       canvas.toBlob(
         (blob) => {
           if (!blob) {
@@ -61,7 +64,7 @@ export async function compressImage(
           resolve({ blob, dataUrl, width: targetWidth, height: targetHeight });
         },
         'image/jpeg',
-        0.82
+        QUALITY
       );
     };
 
