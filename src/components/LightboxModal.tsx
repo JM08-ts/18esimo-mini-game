@@ -17,18 +17,36 @@ export const LightboxModal: React.FC<LightboxModalProps> = ({ submission, onClos
 
   const handleDownload = async () => {
     try {
-      const response = await fetch(submission.image_url);
-      const blob = await response.blob();
+      let blob: Blob;
+      if (submission.image_url.startsWith('data:image/')) {
+        const parts = submission.image_url.split(',');
+        const mime = parts[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+        const binaryStr = atob(parts[1]);
+        const len = binaryStr.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          bytes[i] = binaryStr.charCodeAt(i);
+        }
+        blob = new Blob([bytes], { type: mime });
+      } else {
+        const response = await fetch(submission.image_url);
+        blob = await response.blob();
+      }
+
+      const cleanPlayerName = (submission.player_name || 'Ospite')
+        .trim()
+        .replace(/[^a-zA-Z0-9_\-]/g, '_');
       const blobUrl = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = blobUrl;
-      link.download = `18esimo_${submission.player_name}_task${submission.task_id}.jpg`;
+      link.download = `18esimo_${cleanPlayerName}_task${submission.task_id}.jpg`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      URL.revokeObjectURL(blobUrl);
-    } catch {
-      // Direct window open fallback for iOS
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+    } catch (err) {
+      console.warn('Fallback download:', err);
+      // Direct window open fallback
       window.open(submission.image_url, '_blank');
     }
   };

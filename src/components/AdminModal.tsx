@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { X, Lock, Trash2, Tv, Download, ShieldCheck, RefreshCw, UserX } from 'lucide-react';
+import { X, Lock, Trash2, Tv, Download, ShieldCheck, RefreshCw, UserX, Loader2 } from 'lucide-react';
+import JSZip from 'jszip';
 import { Player, Submission } from '../types';
 import { adminDeleteSubmission, adminDeletePlayer } from '../lib/supabase';
 
@@ -23,6 +24,8 @@ export const AdminModal: React.FC<AdminModalProps> = ({
   const [pinError, setPinError] = useState(false);
   const [activeTab, setActiveTab] = useState<'submissions' | 'players'>('submissions');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [isZipping, setIsZipping] = useState(false);
+  const [zipProgress, setZipProgress] = useState<string | null>(null);
 
   const handleUnlock = (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,24 +76,73 @@ export const AdminModal: React.FC<AdminModalProps> = ({
       return;
     }
 
-    alert(`Download avviato per ${submissions.length} foto. Verranno salvate una ad una.`);
-    for (let i = 0; i < submissions.length; i++) {
-      const sub = submissions[i];
-      try {
-        const response = await fetch(sub.image_url);
-        const blob = await response.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = blobUrl;
-        link.download = `foto_${i + 1}_${sub.player_name}_task${sub.task_id}.jpg`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(blobUrl);
-        await new Promise((r) => setTimeout(r, 300));
-      } catch (err) {
-        console.warn(`Download non riuscito per foto ${i + 1}:`, err);
+    try {
+      setIsZipping(true);
+      setZipProgress(`Preparazione ZIP (0/${submissions.length})...`);
+
+      const zip = new JSZip();
+      const folder = zip.folder('Foto_18esimo_Jean') || zip;
+
+      for (let i = 0; i < submissions.length; i++) {
+        const sub = submissions[i];
+        setZipProgress(`Aggiunta foto (${i + 1}/${submissions.length})...`);
+
+        // Sanitize player name and task title
+        const cleanPlayerName = (sub.player_name || 'Ospite')
+          .trim()
+          .replace(/[^a-zA-Z0-9_\-]/g, '_');
+        const cleanTaskTitle = (sub.task_title || `Task_${sub.task_id}`)
+          .trim()
+          .replace(/[^a-zA-Z0-9_\-]/g, '_');
+        const shortId = (sub.id || String(i + 1)).slice(-6);
+        const indexStr = String(i + 1).padStart(2, '0');
+        const fileName = `${indexStr}_${cleanPlayerName}_${cleanTaskTitle}_${shortId}.jpg`;
+
+        if (sub.image_url.startsWith('data:image/')) {
+          // Direct Base64 extraction
+          const base64Data = sub.image_url.split(',')[1];
+          if (base64Data) {
+            folder.file(fileName, base64Data, { base64: true });
+          }
+        } else {
+          // HTTP/HTTPS URL download
+          try {
+            const res = await fetch(sub.image_url);
+            if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+            const arrayBuffer = await res.arrayBuffer();
+            folder.file(fileName, arrayBuffer);
+          } catch (fetchErr) {
+            console.warn(`Impossibile scaricare foto ${fileName}:`, fetchErr);
+          }
+        }
       }
+
+      setZipProgress('Generazione pacchetto ZIP...');
+
+      const zipBlob = await zip.generateAsync({
+        type: 'blob',
+        mimeType: 'application/zip',
+        compression: 'DEFLATE',
+        compressionOptions: { level: 6 },
+      });
+
+      setZipProgress('Download in corso...');
+
+      const blobUrl = URL.createObjectURL(zipBlob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = 'Foto_18esimo_Jean.zip';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+    } catch (err: any) {
+      console.error('Errore creazione ZIP:', err);
+      alert(`Errore creazione file ZIP: ${err?.message || 'Riprova'}`);
+    } finally {
+      setIsZipping(false);
+      setZipProgress(null);
     }
   };
 
@@ -202,10 +254,20 @@ export const AdminModal: React.FC<AdminModalProps> = ({
 
         <button
           onClick={handleDownloadAllPhotos}
-          className="flex-1 min-w-[140px] py-2.5 px-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 border border-zinc-700 active:scale-95 transition-all"
+          disabled={isZipping}
+          className="flex-1 min-w-[140px] py-2.5 px-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 disabled:opacity-60 text-white font-bold text-xs flex items-center justify-center gap-1.5 border border-zinc-700 active:scale-95 transition-all"
         >
-          <Download className="w-4 h-4 text-amber-400" />
-          <span>Scarica Tutte le Foto ({submissions.length})</span>
+          {isZipping ? (
+            <>
+              <Loader2 className="w-4 h-4 text-amber-400 animate-spin flex-shrink-0" />
+              <span className="truncate">{zipProgress || 'Creazione ZIP...'}</span>
+            </>
+          ) : (
+            <>
+              <Download className="w-4 h-4 text-amber-400 flex-shrink-0" />
+              <span>Scarica Tutte le Foto ({submissions.length})</span>
+            </>
+          )}
         </button>
       </div>
 

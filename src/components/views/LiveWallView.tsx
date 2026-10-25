@@ -14,17 +14,35 @@ export const LiveWallView: React.FC<LiveWallViewProps> = ({
   const handleQuickDownload = async (e: React.MouseEvent, sub: Submission) => {
     e.stopPropagation();
     try {
-      const response = await fetch(sub.image_url);
-      const blob = await response.blob();
+      let blob: Blob;
+      if (sub.image_url.startsWith('data:image/')) {
+        const parts = sub.image_url.split(',');
+        const mime = parts[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+        const binaryStr = atob(parts[1]);
+        const len = binaryStr.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          bytes[i] = binaryStr.charCodeAt(i);
+        }
+        blob = new Blob([bytes], { type: mime });
+      } else {
+        const response = await fetch(sub.image_url);
+        blob = await response.blob();
+      }
+
+      const cleanPlayerName = (sub.player_name || 'Ospite')
+        .trim()
+        .replace(/[^a-zA-Z0-9_\-]/g, '_');
       const blobUrl = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = blobUrl;
-      link.download = `18esimo_${sub.player_name}_${sub.task_id}.jpg`;
+      link.download = `18esimo_${cleanPlayerName}_task${sub.task_id}.jpg`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      URL.revokeObjectURL(blobUrl);
-    } catch {
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+    } catch (err) {
+      console.warn('Fallback download:', err);
       window.open(sub.image_url, '_blank');
     }
   };
