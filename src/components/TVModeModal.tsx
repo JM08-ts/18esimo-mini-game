@@ -16,7 +16,11 @@ export const TVModeModal: React.FC<TVModeModalProps> = ({
   const [currentPhotoIdx, setCurrentPhotoIdx] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  const currentUrl = typeof window !== 'undefined' ? window.location.origin : 'https://18esimo-game.local';
+  const currentUrl = typeof window !== 'undefined'
+    ? (window.location.hostname.includes('github.io')
+        ? 'https://jm08-ts.github.io/18esimo-mini-game/'
+        : `${window.location.origin}${window.location.pathname.replace(/\/index\.html$/, '').replace(/\/$/, '')}/`)
+    : 'https://jm08-ts.github.io/18esimo-mini-game/';
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=10&data=${encodeURIComponent(currentUrl)}`;
 
   // Auto-rotate photos every 5 seconds

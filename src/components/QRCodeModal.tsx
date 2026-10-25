@@ -7,7 +7,11 @@ interface QRCodeModalProps {
 
 export const QRCodeModal: React.FC<QRCodeModalProps> = ({ onClose }) => {
   const [copied, setCopied] = useState(false);
-  const currentUrl = typeof window !== 'undefined' ? window.location.origin : 'https://18esimo-game.local';
+  const currentUrl = typeof window !== 'undefined'
+    ? (window.location.hostname.includes('github.io')
+        ? 'https://jm08-ts.github.io/18esimo-mini-game/'
+        : `${window.location.origin}${window.location.pathname.replace(/\/index\.html$/, '').replace(/\/$/, '')}/`)
+    : 'https://jm08-ts.github.io/18esimo-mini-game/';
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=15&data=${encodeURIComponent(currentUrl)}`;
 
   const handleCopy = async () => {
