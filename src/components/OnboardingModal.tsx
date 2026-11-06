@@ -88,7 +88,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onJoin }) => {
                 disabled={loading}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Es. Maestro, Giulia, Ettorre cane..."
+                placeholder="Es. Maestro, Sofia, Ettorre cane..."
                 maxLength={25}
                 className="w-full px-4 py-3 rounded-xl bg-zinc-950 border border-amber-500/40 text-white placeholder-zinc-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 text-base transition-all"
               />
